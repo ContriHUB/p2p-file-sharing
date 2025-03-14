@@ -12,8 +12,26 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ConnectionHandlerSequential {
-	static int CHUNK_SIZE = 1024;
-	
+		static int CHUNK_SIZE = 1024;
+		private static void printProgressBar(long currentProgress, long totalSize) {
+		    int barLength = 50; // Length of the progress bar
+		    int progress = (int) ((double) currentProgress / totalSize * barLength);
+		
+		    // Build the progress bar string
+		    StringBuilder bar = new StringBuilder("[");
+		    for (int i = 0; i < barLength; i++) {
+		        if (i < progress) {
+		            bar.append("="); // Filled part
+		        } else {
+		            bar.append(" "); // Empty part
+		        }
+		    }
+		    bar.append("] ");
+		    bar.append((currentProgress * 100)/ totalSize).append("%");
+		
+		    // Print the progress bar
+		    System.out.print("\r" + bar.toString()); // \r to overwrite the same line
+		}
 		public static void receiveFile(int port, String fileName) {
 	        try (ServerSocket serverSocket = new ServerSocket(port)) {
 	           
@@ -28,7 +46,7 @@ public class ConnectionHandlerSequential {
 	              
 	                byte[] buffer = new byte[CHUNK_SIZE]; // 4 KB buffer
 	                int bytesRead;
-
+	                long totalSize = fileSize;
 	                // Read the file data in chunks and write to the output file
 	                while (fileSize > 0 && (bytesRead = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
 	                    // perform encryption check sum here
@@ -40,9 +58,10 @@ public class ConnectionHandlerSequential {
 	                	
 	                	fileOutputStream.write(buffer, 0, bytesRead);
 	                    fileSize -= bytesRead; // Reduce remaining file size
+	                    ConnectionHandlerSequential.printProgressBar(totalSize - fileSize, totalSize);
 	                }
 
-	                System.out.println("File received and saved as: " + fileName);
+	                
 	            } catch (IOException e) {
 	                System.err.println("Error during file transfer: " + e.getMessage());
 	                e.printStackTrace();
@@ -80,7 +99,7 @@ public class ConnectionHandlerSequential {
 	                dataOutputStream.flush(); // Ensure data is sent immediately
 	            }
 
-	            System.out.println("File sent successfully.");
+	            
 	        } catch (IOException e) {
 	            System.err.println("Error during file transfer: " + e.getMessage());
 	            e.printStackTrace();

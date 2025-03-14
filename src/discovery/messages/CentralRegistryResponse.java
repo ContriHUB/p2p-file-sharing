@@ -20,9 +20,9 @@ public class CentralRegistryResponse implements Serializable{
 		this.peers[0] = owner;
 		this.sucess = res;
 		
-		System.out.println(this.sucess);
-		System.out.println(this.peers[0]);
-		System.out.println(this.file);
+//		System.out.println(this.sucess);
+//		System.out.println(this.peers[0]);
+//		System.out.println(this.file);
 	}
 	
 	public CentralRegistryResponse(Boolean res , Node owner ) {
@@ -30,8 +30,8 @@ public class CentralRegistryResponse implements Serializable{
 		this.peers = new Node[1];
 		this.peers[0] = owner;
 		this.sucess = res;
-		System.out.println(this.sucess);
-		System.out.println(this.peers[0]);
+//		System.out.println(this.sucess);
+//		System.out.println(this.peers[0]);
 	
 	}
 	
@@ -39,7 +39,7 @@ public class CentralRegistryResponse implements Serializable{
 		// sample peer response
 		this.peers = peers;
 		this.sucess = res;
-		System.out.println(this.sucess);
-		System.out.println(this.peers[0]);
+//		System.out.println(this.sucess);
+//		System.out.println(this.peers[0]);
 	}
 }

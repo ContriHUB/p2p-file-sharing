@@ -30,6 +30,8 @@ public class Main {
         // args[3] = only if it is peer // (central IP)
         // args[4] = only if  it is a peer (central port)
         
+		
+		
 		if(args[0].equals("testing")) {
 			String filePath = "./test/" + args[1];
 			int maxLines = 1000; // Assume a maximum number of lines in the file
@@ -116,6 +118,7 @@ public class Main {
                         case "download":
                             // Start a new thread for download
                             FileTransfer.downloadFile(argument, central);
+                            
                             break;
                         default:
                             System.out.println("Invalid command. Usage: upload <FilePath> or download <FileHash>");
@@ -133,7 +136,7 @@ public class Main {
         }
 
         
-
+//        System.out.println("GO CHECK README FOR TUTORIAL");
         
         
       

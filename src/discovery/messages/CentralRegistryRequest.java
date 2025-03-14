@@ -15,15 +15,15 @@ public class CentralRegistryRequest implements Serializable{
 		this.file = fd;
 		this.owner = owner;
 		this.type = "registerfile";
-		System.out.println(this.owner);
-		System.out.println(this.file);
+//		System.out.println(this.owner);
+//		System.out.println(this.file);
 	}
 	
 	public CentralRegistryRequest(Node owner) {
 		// for reistering a peer
 		this.owner = owner;
 		this.type = "registerpeer";
-		System.out.println(this.owner);
+//		System.out.println(this.owner);
 	
 	}
 	
@@ -32,7 +32,7 @@ public class CentralRegistryRequest implements Serializable{
 		this.file = new FileData();
 		this.file.setFileHash(fileHash);
 	
-		System.out.println(this.file);
+//		System.out.println(this.file);
 		this.type = "getpotentialpeers";
 		
 	}

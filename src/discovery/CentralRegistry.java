@@ -22,8 +22,8 @@ public class CentralRegistry {
 		// make the node listen on a particular port
 		
 		// call the three method below as per the reqest
-		System.out.println("central registry on");
-    	System.out.print(central.getPeerPort());
+//		System.out.println("central registry on");
+//    	System.out.print(central.getPeerPort());
     	
     	CR = central;
     	while(true) {
@@ -96,15 +96,15 @@ public class CentralRegistry {
 
 	            // Update the map with the new array
 	            peerMap.put(fileHash, newNodes);
-	            System.out.println("Node added to existing file hash: " + fileHash);
+//	            System.out.println("Node added to existing file hash: " + fileHash);
 	        } else {
-	            System.out.println("Node already exists for file hash: " + fileHash);
+//	            System.out.println("Node already exists for file hash: " + fileHash);
 	        }
 	    } else {
 	        // File hash does not exist, create a new entry in the map
 	        Node[] newNodes = new Node[]{node};
 	        peerMap.put(fileHash, newNodes);
-	        System.out.println("New file hash registered: " + fileHash);
+//	        System.out.println("New file hash registered: " + fileHash);
 	    }
 
 	    
@@ -115,7 +115,7 @@ public class CentralRegistry {
 	    	CentralRegistryResponse res = new CentralRegistryResponse(true , req.owner , req.file);
 		    ObjectTransfer.sendObject(socket, res);
 	        socket.close();
-	        System.out.println("Socket closed.");
+//	        System.out.println("Socket closed.");
 	    } catch (IOException e) {
 	        System.err.println("Error closing socket: " + e.getMessage());
 	    }

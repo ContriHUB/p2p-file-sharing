@@ -21,9 +21,12 @@ public class FileTransfer {
 			FileData file = new FileData();
 			file.setFileHash(fileHash);
 			if(res.sucess) {
-				for(Node potentialPeer : res.peers) {
+				for(Node potentialPeer : res.peers) { 
+					
+					//implement a peer selection logic here
 					if(FileTransfer.downloadFromPeer(potentialPeer , file)) {
-						System.out.println("Downloaded from peer" + potentialPeer);
+						System.out.println("\n Downloaded from peer " + potentialPeer);
+						
 						break;
 					}
 					else {
@@ -59,8 +62,10 @@ public class FileTransfer {
 	 		   
 	 	
 	 		   String filePath = "./downloads/" + fileName;
+	 		   
 	 		   ConnectionHandlerSequential.receiveFile(treq.Port , filePath);
 	 		   
+	 		   Handshake.registerFile(f , filePath);
 	 		   return true;
 
 	        } catch (IOException | ClassNotFoundException  e) {
