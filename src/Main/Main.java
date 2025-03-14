@@ -1,5 +1,7 @@
 package Main;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
@@ -15,6 +17,7 @@ import discovery.messages.TransferResponse;
 import p2p.ConnectionHandlerSequential;
 import p2p.FileTransfer;
 import p2p.ObjectTransfer;
+import testing.FileTesting;
 
 public class Main {
 	public static void main(String[] args) throws IOException {
@@ -27,6 +30,33 @@ public class Main {
         // args[3] = only if it is peer // (central IP)
         // args[4] = only if  it is a peer (central port)
         
+		if(args[0].equals("testing")) {
+			String filePath = "./test/" + args[1];
+			int maxLines = 1000; // Assume a maximum number of lines in the file
+	        String[] paths = new String[maxLines]; // Create an array with the assumed size
+	        int index = 0;
+
+	        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+	            String line;
+	            while ((line = br.readLine()) != null) {
+	                line = line.trim(); // Trim the line to remove any leading/trailing whitespace
+	                if (!line.isEmpty()) { // Ignore empty lines
+	                    if (index >= maxLines) {
+	                        throw new RuntimeException("Exceeded maximum number of lines: " + maxLines);
+	                    }
+	                    paths[index++] = line; // Add the path to the array
+	                }
+	            }
+	        } catch (IOException e) {
+	            throw new RuntimeException("Failed to read the file: " + filePath, e);
+	        }
+
+	        // Resize the array to the actual number of paths read
+	        String[] result = new String[index];
+	        System.arraycopy(paths, 0, result, 0, index);
+	        FileTesting.test(result);
+		}
+		
 		
 		if(args[0].equals("central")) {
         	Node central = new Node();
