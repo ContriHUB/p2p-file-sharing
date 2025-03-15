@@ -10,7 +10,7 @@ import discovery.CentralRegistry;
 import discovery.FileData;
 import discovery.Handshake;
 import discovery.Node;
-import p2p.FileTransfer;
+import p2p.FileReciever;
 
 public class FileTesting {
 	public static String CentralIP = "127.0.0.1";
@@ -105,7 +105,7 @@ public class FileTesting {
     	central.setPeerPort(CentralPort);
     	
     	for(String hash : hashes) {
-    		FileTransfer.downloadFile(hash, central);
+    		FileReciever.downloadFile(hash, central);
     	}
     	
 	}

@@ -14,8 +14,9 @@ import discovery.messages.FileRequest;
 import discovery.messages.FileResponse;
 import discovery.messages.TransferRequest;
 import discovery.messages.TransferResponse;
+import p2p.BroadCastTransfer;
 import p2p.ConnectionHandlerSequential;
-import p2p.FileTransfer;
+import p2p.FileReciever;
 import p2p.ObjectTransfer;
 import testing.FileTesting;
 
@@ -67,8 +68,7 @@ public class Main {
         	CentralRegistry.start(central);
         }
         
-        
-        
+   
         if(args[0].equals("peer")) {
         	// one does this
         	Node client = new Node();
@@ -112,14 +112,29 @@ public class Main {
                     switch (command.toLowerCase()) {
                         case "upload":
                             // Start a new thread for upload
-                        	FileData f = new FileData(argument);
-                            Handshake.registerFile(f , argument);
+                        	FileData fileupload = new FileData(argument);
+                        	System.out.println("The Hash of the File is " + fileupload.getFileHash());
+                            Handshake.registerFile(fileupload , argument);
                             break;
                         case "download":
                             // Start a new thread for download
-                            FileTransfer.downloadFile(argument, central);
+                            FileReciever.downloadFile(argument, central);
                             
                             break;
+                        case "broadcastfile":
+                        	FileData f = new FileData(argument);
+                			
+                			System.out.println("The File Hash of the File to be broadcasted is " + f.getFileHash());
+                			System.out.println("Type broadcast to enter broadcasting period");
+                			
+                			userInput = scanner.nextLine().trim();
+                        	BroadCastTransfer.BroadcastFile(f , Handshake.getClient() , argument);
+                        	break;
+                        
+                        case "broadcastrecieve":
+                        	BroadCastTransfer.RecieveFile(argument);
+                        	break;
+                        	
                         default:
                             System.out.println("Invalid command. Usage: upload <FilePath> or download <FileHash>");
                             break;
