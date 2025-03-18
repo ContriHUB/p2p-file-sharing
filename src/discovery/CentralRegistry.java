@@ -59,7 +59,7 @@ public class CentralRegistry {
 	}
 	public static void RegisterPeer(Socket socket , CentralRegistryRequest req) {
 		//  register a peer 
-		// i.e give it a name and a id\
+		// i.e give it a name and a id
 		
 		// this is not needed as of know
 		// will think

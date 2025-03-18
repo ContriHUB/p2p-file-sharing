@@ -58,8 +58,8 @@ public class Handshake {
                 	
                 	socket.close();
                 
-                	
-                	ConnectionHandlerSequential.sendFile(tres.RequestingNode.getPeerIP() , tres.Port , Handshake.HashtoPath.get(treq.Fd.getFileHash()));
+//                	System.out.println("the public key of requesting node is " + req.pub );
+                	ConnectionHandlerSequential.sendFile(tres.RequestingNode.getPeerIP() , tres.Port , Handshake.HashtoPath.get(treq.Fd.getFileHash()) , req.pub);
                 	
                 	
                 }

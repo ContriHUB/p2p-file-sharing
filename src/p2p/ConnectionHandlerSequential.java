@@ -10,86 +10,140 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import utils.UserExperience;
 
 public class ConnectionHandlerSequential {
-		static int CHUNK_SIZE = 1024;
-		
-		public static void receiveFile(int port, String fileName) {
-	        try (ServerSocket serverSocket = new ServerSocket(port)) {
-	           
-
-	            // Accept the client connection
-	            try (Socket clientSocket = serverSocket.accept();
-	                 DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
-	                 FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
-
-	              
-	                long fileSize = dataInputStream.readLong();
-	              
-	                byte[] buffer = new byte[CHUNK_SIZE]; // 4 KB buffer
-	                int bytesRead;
-	                long totalSize = fileSize;
-	                // Read the file data in chunks and write to the output file
-	                while (fileSize > 0 && (bytesRead = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
-	                    // perform encryption check sum here
-	                	
-	                	
-	                	
-	                	
-	                	///////
-	                	
-	                	fileOutputStream.write(buffer, 0, bytesRead);
-	                    fileSize -= bytesRead; // Reduce remaining file size
-	                    UserExperience.printProgressBar(totalSize - fileSize, totalSize);
-	                }
-
-	                
-	            } catch (IOException e) {
-	                System.err.println("Error during file transfer: " + e.getMessage());
-	                e.printStackTrace();
-	            }
-	        } catch (IOException e) {
-	            System.err.println("Could not start server on port " + port + ": " + e.getMessage());
-	            e.printStackTrace();
-	        }
-	    }
-	 
-	 public static void sendFile(String serverAddress, int port, String filePath) {
+		static int CHUNK_SIZE = 20;
+	
+	
+		 
+		 
+		public static void sendFile(String serverAddress, int port, String filePath, PublicKey pub) {
 	        try (Socket socket = new Socket(serverAddress, port);
 	             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 	             FileInputStream fileInputStream = new FileInputStream(filePath)) {
 
-	           
+	            
+	            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+	            keyGenerator.init(256); // 256-bit key
+	            SecretKey aesKey = keyGenerator.generateKey();
+
+	            
+	            Cipher rsaCipher = Cipher.getInstance("RSA");
+	            rsaCipher.init(Cipher.ENCRYPT_MODE, pub);
+	            byte[] encryptedAesKey = rsaCipher.doFinal(aesKey.getEncoded());
+
+	            dataOutputStream.writeInt(encryptedAesKey.length); // Send key length
+	            dataOutputStream.write(encryptedAesKey); // Send encrypted key
+
+	            Cipher aesCipher = Cipher.getInstance("AES");
+	            aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+
 	            File file = new File(filePath);
 	            long fileSize = file.length();
-	            
-	            // Send the file size to the server
 	            dataOutputStream.writeLong(fileSize);
-
-	            // Buffer to read and send chunks of data
-	            byte[] buffer = new byte[CHUNK_SIZE]; // 4 KB buffer
+	            System.out.println("Recieving file ");
+	            // Encrypt and send file in chunks
+	            byte[] buffer = new byte[4096]; // File read buffer
 	            int bytesRead;
-
-	            // Read the file and send it in chunks
+	            int totalBytes = 0;
 	            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-	            	//perform encryption check sum all here
-	            	
-	            	
-	            	
-	            	////////
-	                dataOutputStream.write(buffer, 0, bytesRead);
-	                dataOutputStream.flush(); // Ensure data is sent immediately
+	                byte[] encryptedChunk = aesCipher.update(buffer, 0, bytesRead);
+	                if (encryptedChunk != null) {
+	                    dataOutputStream.write(encryptedChunk);
+	                }
+	                totalBytes += bytesRead;
+	                UserExperience.printProgressBar(totalBytes , fileSize);
 	            }
 
-	            
-	        } catch (IOException e) {
+	            // Finalize encryption
+	            byte[] finalEncryptedChunk = aesCipher.doFinal();
+	            if (finalEncryptedChunk != null) {
+	                dataOutputStream.write(finalEncryptedChunk);
+	            }
+	            UserExperience.printProgressBar(fileSize , fileSize);
+	            System.out.println("\n File sent successfully.");
+
+	        } catch (Exception e) {
 	            System.err.println("Error during file transfer: " + e.getMessage());
 	            e.printStackTrace();
 	        }
 	    }
+		
+		
+	
 
+		 public static void receiveFile(int port, String fileName, PrivateKey prv) {
+		        try (ServerSocket serverSocket = new ServerSocket(port)) {
+		            System.out.println("Server started on port " + port);
+
+		            // Accept the client connection
+		            try (Socket clientSocket = serverSocket.accept();
+		                 DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
+		                 FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
+
+		                int encryptedKeyLength = dataInputStream.readInt();
+		                byte[] encryptedAesKey = new byte[encryptedKeyLength];
+		                dataInputStream.readFully(encryptedAesKey);
+
+		         
+		                Cipher rsaCipher = Cipher.getInstance("RSA");
+		                rsaCipher.init(Cipher.DECRYPT_MODE, prv);
+		                byte[] aesKeyBytes = rsaCipher.doFinal(encryptedAesKey);
+		                SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
+
+		              
+		                Cipher aesCipher = Cipher.getInstance("AES");
+		                aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
+
+		            
+		                long fileSize = dataInputStream.readLong();
+		                
+		                
+		                System.out.println("Initiating File Transfer");
+		                // Decrypt and write file in chunks
+		                byte[] buffer = new byte[4096]; // File write buffer
+		                int bytesRead;
+		                long totalBytesRead = 0;
+		                while (totalBytesRead < fileSize) {
+		                    bytesRead = dataInputStream.read(buffer);
+		                    if (bytesRead == -1) break;
+		                    byte[] decryptedChunk = aesCipher.update(buffer, 0, bytesRead);
+		                    if (decryptedChunk != null) {
+		                        fileOutputStream.write(decryptedChunk);
+		                    }
+		                    totalBytesRead += bytesRead;
+		                    UserExperience.printProgressBar(totalBytesRead, fileSize);
+		                }
+
+		                // Finalize decryption
+		                byte[] finalDecryptedChunk = aesCipher.doFinal();
+		                if (finalDecryptedChunk != null) {
+		                    fileOutputStream.write(finalDecryptedChunk);
+		                }
+		                UserExperience.printProgressBar(fileSize , fileSize);
+		                System.out.println("\n File received and decrypted successfully.");
+
+		            } catch (Exception e) {
+		                System.err.println("Error during file transfer: " + e.getMessage());
+		                e.printStackTrace();
+		            }
+		        } catch (IOException e) {
+		            System.err.println("Could not start server on port " + port + ": " + e.getMessage());
+		            e.printStackTrace();
+		        }
+		    }
 	}
 
 

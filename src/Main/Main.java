@@ -4,12 +4,20 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Scanner;
 
 import discovery.CentralRegistry;
 import discovery.FileData;
 import discovery.Handshake;
 import discovery.Node;
+import discovery.messages.CentralRegistryRequest;
+import discovery.messages.CentralRegistryResponse;
 import discovery.messages.FileRequest;
 import discovery.messages.FileResponse;
 import discovery.messages.TransferRequest;
@@ -75,12 +83,29 @@ public class Main {
         	client.setPeerIP(args[1]);
         	client.setPeerPort(Integer.parseInt(args[2]));
         	
+        	
+        	
+			
+        	
         	Node central = new Node();
         	central.setPeerIP(args[3]);
         	central.setPeerPort(Integer.parseInt(args[4]));
+        	
+        	
+        	
+        	
+        	
+        
             try {
+            	
+            	
+            	
             	Handshake.setClient(client);
             	Handshake.setCentralRegistry(central);
+            	
+            	
+            	
+            	
             	Thread t = new Thread(() -> Handshake.start(client.getPeerPort() , client));
                 t.start(); //this thread line will be started for each of the peer
 

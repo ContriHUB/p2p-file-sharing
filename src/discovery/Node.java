@@ -1,6 +1,14 @@
 package discovery;
 
 import java.io.Serializable;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
+import p2p.ObjectTransfer;
+
 
 public class Node implements Serializable{
 	// Peer identification fields
@@ -8,7 +16,7 @@ public class Node implements Serializable{
     private String peerName; // Human-readable name for the peer
     private String peerIP; // IP address of the peer
     private int peerPort; // handshake registry port
-
+   
     // Constructor
     public Node(String peerId, String peerName, String peerIP, int peerPort) {
         this.peerId = peerId;
@@ -53,7 +61,11 @@ public class Node implements Serializable{
     public void setPeerPort(int peerPort) {
         this.peerPort = peerPort;
     }
-
+    
+  
+    
+  
+    
     // toString method for easy debugging
     @Override
     public String toString() {
