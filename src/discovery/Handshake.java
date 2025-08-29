@@ -1,15 +1,14 @@
 package discovery;
-import java.io.*;
-import java.net.*;
-import java.util.HashMap;
-import java.util.Map;
-
 import discovery.messages.CentralRegistryRequest;
 import discovery.messages.CentralRegistryResponse;
 import discovery.messages.FileRequest;
 import discovery.messages.FileResponse;
 import discovery.messages.TransferRequest;
 import discovery.messages.TransferResponse;
+import java.io.*;
+import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 import p2p.ConnectionHandlerSequential;
 import p2p.ObjectTransfer;
 public class Handshake {
@@ -26,8 +25,8 @@ public class Handshake {
     public static void start(int port , Node c) {
     	
 //    	registerToCentralRegistry(port);
-//    	System.out.println("handshake on");
-//    	System.out.print(port);
+   	System.out.println("handshake on");
+   	System.out.print(port);
     	
     	client = c;
     	while(true) {
@@ -36,29 +35,29 @@ public class Handshake {
 
                 Socket socket = serverSocket.accept();
                 Object obj =  ObjectTransfer.receiveObject(socket);
-//                System.out.println("FileRequst Recieved");
+               System.out.println("FileRequst Recieved");
                 FileRequest req = (FileRequest)obj;
                 FileResponse res;
               
                 if(HashtoFD.containsKey(req.FileData.getFileHash())) {
                 	res = new FileResponse(req.RequestingNode,client,true,Handshake.HashtoFD.get(req.FileData.getFileHash()));
-//                	System.out.println("FileResponse Sentding");
+               	System.out.println("FileResponse Sentding");
                 	ObjectTransfer.sendObject(socket, res);
-//                	System.out.println("FileResponse Sent");
+               	System.out.println("FileResponse Sent");
                 	obj = ObjectTransfer.receiveObject(socket);
                 	
                 	
-//                	System.out.println("TransferRequest Recieved");
+               	System.out.println("TransferRequest Recieved");
                 	TransferRequest treq = (TransferRequest)obj;
-//                	System.out.println("TransferResponse Senting");
+               	System.out.println("TransferResponse Senting");
                 	TransferResponse tres = new TransferResponse(treq.RequestingNode , client , treq.Port , true);
-//                	System.out.println("TransferResponse Sent");
+               	System.out.println("TransferResponse Sent");
                 	ObjectTransfer.sendObject(socket, tres);
               	
                 	
                 	socket.close();
                 
-//                	System.out.println("the public key of requesting node is " + req.pub );
+               	System.out.println("the public key of requesting node is " + req.pub );
                 	ConnectionHandlerSequential.sendFile(tres.RequestingNode.getPeerIP() , tres.Port , Handshake.HashtoPath.get(treq.Fd.getFileHash()) , req.pub);
                 	
                 	
@@ -92,7 +91,7 @@ public class Handshake {
 			if(res.sucess) {
 				HashtoFD.put(f.getFileHash() , f);
 				HashtoPath.put(f.getFileHash(), path);
-//				System.out.println("SuccessFully Uploaded the File");
+				System.out.println("SuccessFully Uploaded the File");
 			}
 		} catch (IOException | ClassNotFoundException e) {
 			
