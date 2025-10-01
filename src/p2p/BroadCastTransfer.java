@@ -16,6 +16,7 @@ import discovery.FileData;
 import discovery.Node;
 import discovery.messages.BroadcastBeacon;
 import utils.UserExperience;
+import utils.Config;
 
 public class BroadCastTransfer {
 	
@@ -105,7 +106,7 @@ public class BroadCastTransfer {
 	            DatagramSocket socket = new DatagramSocket(BroadCastTransfer.broadcastListeningPort);
 
 	            // Open the file to write
-	            String outputFilePath = "./downloads/" + beacon.file.getFileName();
+	            String outputFilePath = new java.io.File(Config.getDownloadsDir(), beacon.file.getFileName()).getPath();
 	            FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
 	            byte[] buffer = new byte[BUFFER_SIZE];
 	            long recvSize = 0;

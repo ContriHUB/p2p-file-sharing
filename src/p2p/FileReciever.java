@@ -10,6 +10,8 @@ import discovery.FileData;
 import discovery.Handshake;
 import discovery.Node;
 import discovery.messages.*;
+import java.io.File;
+import utils.Config;
 public class FileReciever {
 	// this class  has  all the methods for the file reciever
 	public static void downloadFile(String fileHash , Node CentralRegistry) {
@@ -75,7 +77,7 @@ public class FileReciever {
 	 		    ObjectTransfer.sendObject(socket, treq);
 	 		   
 	 	
-	 		   String filePath = "./downloads/" + fileName;
+	 	   String filePath = new File(Config.getDownloadsDir(), fileName).getPath();
 	 		   
 	 		   ConnectionHandlerSequential.receiveFile(treq.Port , filePath , keys.getPrivate());
 	 		   
