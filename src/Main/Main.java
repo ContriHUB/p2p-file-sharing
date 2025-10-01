@@ -1,6 +1,7 @@
 package Main;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
@@ -27,6 +28,7 @@ import p2p.ConnectionHandlerSequential;
 import p2p.FileReciever;
 import p2p.ObjectTransfer;
 import testing.FileTesting;
+import utils.Config;
 
 public class Main {
 	public static void main(String[] args) throws IOException {
@@ -42,7 +44,7 @@ public class Main {
 		
 		
 		if(args[0].equals("testing")) {
-			String filePath = "./test/" + args[1];
+			String filePath = new File(Config.getTestDir(), args[1]).getPath();
 			int maxLines = 1000; // Assume a maximum number of lines in the file
 	        String[] paths = new String[maxLines]; // Create an array with the assumed size
 	        int index = 0;
