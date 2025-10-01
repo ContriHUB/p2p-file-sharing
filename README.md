@@ -46,3 +46,42 @@
 
 
 
+
+## Project Structure
+
+- `src/`
+  - `Main/`
+    - `Main.java`: Entry point. Parses CLI, adapts peer/central roles, and user commands.
+  - `discovery/`
+    - `CentralRegistry.java`: Central server logic for file and peer discovery.
+    - `Handshake.java`: Session setup and request/response coordination between peers and central.
+    - `FileData.java`: Metadata for files (name, size, hash) used across discovery and transfer.
+    - `Node.java`: Represents a peer (IP, port, identity).
+    - `messages/`: Serializable message types exchanged over the network
+      - `CentralRegistryRequest.java`, `CentralRegistryResponse.java`
+      - `FileRequest.java`, `FileResponse.java`
+      - `TransferRequest.java`, `TransferResponse.java`
+      - `BroadcastBeacon.java`: Beacon used for UDP broadcast transfers.
+  - `p2p/`
+    - `ConnectionHandlerSequential.java`: Encrypted sequential TCP file send/receive.
+    - `ConnectionHandlerParallel.java`: Simpler TCP send/receive variant.
+    - `FileReciever.java`: High-level download flow (queries registry, selects peer, saves to downloads dir).
+    - `ObjectTransfer.java`: Object serialization over TCP and UDP broadcast helpers.
+    - `BroadCastTransfer.java`: File broadcasting and reception over UDP using beacons.
+  - `testing/`
+    - `FileTesting.java`: Test harness that spins up central, sender, receiver from a list of file paths.
+  - `utils/`
+    - `UserExperience.java`: Console progress bar utilities for transfers.
+    - `Config.java`: Centralized config loader; provides `getTestDir()` and `getDownloadsDir()`.
+  - `test/`
+    - Test input lists (e.g., `unit.txt`, `big.txt`, `encryption.txt`) consumed in testing mode.
+  - `downloads/`
+    - Default downloads target directory (configurable via `config.properties`).
+
+- `bin/`
+  - Compiled `.class` files organized mirroring `src/` packages.
+
+- `config.properties`
+  - Repository-level configuration for directories:
+    - `test.dir`: Directory containing test list files (default `./src/test`).
+    - `downloads.dir`: Directory where downloads are saved (default `./src/downloads`).
