@@ -1,149 +1,136 @@
 package p2p;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import utils.CryptoUtils;
 import utils.UserExperience;
 
 public class ConnectionHandlerSequential {
-		static int CHUNK_SIZE = 20;
-	
-	
-		 
-		 
-		public static void sendFile(String serverAddress, int port, String filePath, PublicKey pub) {
-	        try (Socket socket = new Socket(serverAddress, port);
-	             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-	             FileInputStream fileInputStream = new FileInputStream(filePath)) {
 
-	            
-	            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-	            keyGenerator.init(256); // 256-bit key
-	            SecretKey aesKey = keyGenerator.generateKey();
+    // Sends a file to a peer with AES-GCM encryption protected by passkey
+    public static void sendFile(String serverAddress, int port, String filePath, Object pub, String passkey) {
+        try (Socket socket = new Socket(serverAddress, port);
+             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+             FileInputStream fileInputStream = new FileInputStream(filePath)) {
 
-	            
-	            Cipher rsaCipher = Cipher.getInstance("RSA");
-	            rsaCipher.init(Cipher.ENCRYPT_MODE, pub);
-	            byte[] encryptedAesKey = rsaCipher.doFinal(aesKey.getEncoded());
+            // Generate AES key for file encryption
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            keyGen.init(256);
+            SecretKey fileKey = keyGen.generateKey();
 
-	            dataOutputStream.writeInt(encryptedAesKey.length); // Send key length
-	            dataOutputStream.write(encryptedAesKey); // Send encrypted key
+            // Encrypt AES key using passkey
+            byte[] salt = CryptoUtils.randomBytes(16);
+            SecretKey passKeyDerived = CryptoUtils.deriveKey(passkey.toCharArray(), salt);
+            byte[] iv = CryptoUtils.randomBytes(12); // AES-GCM IV
+            byte[] encFileKey = CryptoUtils.aesGcmEncrypt(fileKey.getEncoded(), passKeyDerived, iv, null);
 
-	            Cipher aesCipher = Cipher.getInstance("AES");
-	            aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+            // Send salt, IV, and encrypted AES key
+            dataOutputStream.writeInt(salt.length);
+            dataOutputStream.write(salt);
+            dataOutputStream.writeInt(iv.length);
+            dataOutputStream.write(iv);
+            dataOutputStream.writeInt(encFileKey.length);
+            dataOutputStream.write(encFileKey);
 
-	            File file = new File(filePath);
-	            long fileSize = file.length();
-	            dataOutputStream.writeLong(fileSize);
-	            System.out.println("Recieving file ");
-	            // Encrypt and send file in chunks
-	            byte[] buffer = new byte[4096]; // File read buffer
-	            int bytesRead;
-	            int totalBytes = 0;
-	            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-	                byte[] encryptedChunk = aesCipher.update(buffer, 0, bytesRead);
-	                if (encryptedChunk != null) {
-	                    dataOutputStream.write(encryptedChunk);
-	                }
-	                totalBytes += bytesRead;
-	                UserExperience.printProgressBar(totalBytes , fileSize);
-	            }
+            // Encrypt and send file
+            Cipher aesCipher = Cipher.getInstance("AES");
+            aesCipher.init(Cipher.ENCRYPT_MODE, fileKey);
 
-	            // Finalize encryption
-	            byte[] finalEncryptedChunk = aesCipher.doFinal();
-	            if (finalEncryptedChunk != null) {
-	                dataOutputStream.write(finalEncryptedChunk);
-	            }
-	            UserExperience.printProgressBar(fileSize , fileSize);
-	            System.out.println("\n File sent successfully.");
+            File file = new File(filePath);
+            long fileSize = file.length();
+            dataOutputStream.writeLong(fileSize);
 
-	        } catch (Exception e) {
-	            System.err.println("Error during file transfer: " + e.getMessage());
-	            e.printStackTrace();
-	        }
-	    }
-		
-		
-	
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            long totalBytes = 0;
 
-		 public static void receiveFile(int port, String fileName, PrivateKey prv) {
-		        try (ServerSocket serverSocket = new ServerSocket(port)) {
-		            System.out.println("Server started on port " + port);
+            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                byte[] encryptedChunk = aesCipher.update(buffer, 0, bytesRead);
+                if (encryptedChunk != null) dataOutputStream.write(encryptedChunk);
+                totalBytes += bytesRead;
+                UserExperience.printProgressBar(totalBytes, fileSize);
+            }
 
-		            // Accept the client connection
-		            try (Socket clientSocket = serverSocket.accept();
-		                 DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream());
-		                 FileOutputStream fileOutputStream = new FileOutputStream(fileName)) {
+            byte[] finalChunk = aesCipher.doFinal();
+            if (finalChunk != null) dataOutputStream.write(finalChunk);
 
-		                int encryptedKeyLength = dataInputStream.readInt();
-		                byte[] encryptedAesKey = new byte[encryptedKeyLength];
-		                dataInputStream.readFully(encryptedAesKey);
+            UserExperience.printProgressBar(fileSize, fileSize);
+            System.out.println("\nFile sent successfully with passkey protection!");
 
-		         
-		                Cipher rsaCipher = Cipher.getInstance("RSA");
-		                rsaCipher.init(Cipher.DECRYPT_MODE, prv);
-		                byte[] aesKeyBytes = rsaCipher.doFinal(encryptedAesKey);
-		                SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-		              
-		                Cipher aesCipher = Cipher.getInstance("AES");
-		                aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
+    // Receives a file from a peer and decrypts it using AES-GCM with passkey
+    public static void receiveFile(int port, String filePath, String passkey) {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server started on port " + port);
 
-		            
-		                long fileSize = dataInputStream.readLong();
-		                
-		                
-		                System.out.println("Initiating File Transfer");
-		                // Decrypt and write file in chunks
-		                byte[] buffer = new byte[4096]; // File write buffer
-		                int bytesRead;
-		                long totalBytesRead = 0;
-		                while (totalBytesRead < fileSize) {
-		                    bytesRead = dataInputStream.read(buffer);
-		                    if (bytesRead == -1) break;
-		                    byte[] decryptedChunk = aesCipher.update(buffer, 0, bytesRead);
-		                    if (decryptedChunk != null) {
-		                        fileOutputStream.write(decryptedChunk);
-		                    }
-		                    totalBytesRead += bytesRead;
-		                    UserExperience.printProgressBar(totalBytesRead, fileSize);
-		                }
+            try (Socket clientSocket = serverSocket.accept();
+                 DataInputStream dataInputStream = new DataInputStream(clientSocket.getInputStream())) {
 
-		                // Finalize decryption
-		                byte[] finalDecryptedChunk = aesCipher.doFinal();
-		                if (finalDecryptedChunk != null) {
-		                    fileOutputStream.write(finalDecryptedChunk);
-		                }
-		                UserExperience.printProgressBar(fileSize , fileSize);
-		                System.out.println("\n File received and decrypted successfully.");
+                // Ensure downloads directory exists
+                File outFile = new File(filePath);
+                outFile.getParentFile().mkdirs();
 
-		            } catch (Exception e) {
-		                System.err.println("Error during file transfer: " + e.getMessage());
-		                e.printStackTrace();
-		            }
-		        } catch (IOException e) {
-		            System.err.println("Could not start server on port " + port + ": " + e.getMessage());
-		            e.printStackTrace();
-		        }
-		    }
-	}
+                try (FileOutputStream fileOutputStream = new FileOutputStream(outFile)) {
 
+                    // Read salt, IV, and encrypted AES key
+                    int saltLen = dataInputStream.readInt();
+                    byte[] salt = new byte[saltLen];
+                    dataInputStream.readFully(salt);
 
+                    int ivLen = dataInputStream.readInt();
+                    byte[] iv = new byte[ivLen];
+                    dataInputStream.readFully(iv);
+
+                    int encKeyLen = dataInputStream.readInt();
+                    byte[] encKey = new byte[encKeyLen];
+                    dataInputStream.readFully(encKey);
+
+                    // Derive AES key from passkey and decrypt file AES key
+                    SecretKey derivedKey = CryptoUtils.deriveKey(passkey.toCharArray(), salt);
+                    byte[] fileKeyBytes = CryptoUtils.aesGcmDecrypt(encKey, derivedKey, iv, null);
+                    SecretKey fileKey = new SecretKeySpec(fileKeyBytes, "AES");
+
+                    // Prepare AES cipher for file decryption
+                    Cipher cipher = Cipher.getInstance("AES");
+                    cipher.init(Cipher.DECRYPT_MODE, fileKey);
+
+                    // Read file data
+                    long fileSize = dataInputStream.readLong();
+                    byte[] buffer = new byte[4096];
+                    long totalRead = 0;
+
+                    while (totalRead < fileSize) {
+                        int read = dataInputStream.read(buffer);
+                        if (read == -1) break;
+                        byte[] decrypted = cipher.update(buffer, 0, read);
+                        if (decrypted != null) fileOutputStream.write(decrypted);
+                        totalRead += read;
+                        UserExperience.printProgressBar(totalRead, fileSize);
+                    }
+
+                    byte[] finalBytes = cipher.doFinal();
+                    if (finalBytes != null) fileOutputStream.write(finalBytes);
+                    UserExperience.printProgressBar(fileSize, fileSize);
+
+                    System.out.println("\nFile received and decrypted successfully!");
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

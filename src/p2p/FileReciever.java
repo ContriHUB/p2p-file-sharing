@@ -2,91 +2,75 @@ package p2p;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 
 import discovery.FileData;
 import discovery.Handshake;
 import discovery.Node;
-import discovery.messages.*;
-import java.io.File;
-import utils.Config;
-public class FileReciever {
-	// this class  has  all the methods for the file reciever
-	public static void downloadFile(String fileHash , Node CentralRegistry) {
-		
-		
-        
-		CentralRegistryRequest req = new CentralRegistryRequest(fileHash);
-		
-		try {
-			Socket socket = new Socket(CentralRegistry.getPeerIP() , CentralRegistry.getPeerPort());
-			ObjectTransfer.sendObject(socket , req);
-			Object obj = ObjectTransfer.receiveObject(socket);
-			CentralRegistryResponse res = (CentralRegistryResponse)obj;
-			FileData file = new FileData();
-			file.setFileHash(fileHash);
-			if(res.sucess) {
-				for(Node potentialPeer : res.peers) { 
-					
-					//implement a peer selection logic here
-					if(FileReciever.downloadFromPeer(potentialPeer , file)) {
-						System.out.println("\n Downloaded from peer " + potentialPeer);
-						
-						break;
-					}
-					else {
-						System.out.println("Failed Downloading from " + potentialPeer);
-					}
-				}
-			}
-			else {
-				System.out.println("FAILED TO GET PEERS");
-			}
-		} catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	public static boolean downloadFromPeer(Node peer , FileData f) {
-			Node two = Handshake.getClient();
-			FileRequest req = new FileRequest(f , two);
-			
-		
-			
-			
-			
-		   try (Socket socket = new Socket(peer.getPeerIP(), peer.getPeerPort())) {
-		         
-			   KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-				keyPairGenerator.initialize(2048); // Key size
-		        KeyPair keys = keyPairGenerator.generateKeyPair();
-		        req.pub =  keys.getPublic();
-		        
-		        
-	           ObjectTransfer.sendObject(socket, req);
-	           
-	 		   Object obj = ObjectTransfer.receiveObject(socket);
-	 		   
-	 		   FileResponse res = (FileResponse)obj;
-	 		   String fileName = res.file.getFileName();
-	 		   TransferRequest treq = new TransferRequest(two , f , 7777);
-	 		  
-	 		    ObjectTransfer.sendObject(socket, treq);
-	 		   
-	 	
-	 	   String filePath = new File(Config.getDownloadsDir(), fileName).getPath();
-	 		   
-	 		   ConnectionHandlerSequential.receiveFile(treq.Port , filePath , keys.getPrivate());
-	 		   
-	 		   Handshake.registerFile(f , filePath);
-	 		   return true;
+import discovery.messages.CentralRegistryRequest;
+import discovery.messages.CentralRegistryResponse;
+import discovery.messages.FileRequest;
+import discovery.messages.FileResponse;
+import discovery.messages.TransferRequest;
 
-	        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException  e) {
-	            e.printStackTrace();
-	            return false;
-	        }
-	}
+public class FileReciever {
+
+    // Download a file by hash from Central Registry
+    public static void downloadFile(String fileHash, Node centralRegistry, String passkey) {
+        CentralRegistryRequest req = new CentralRegistryRequest(fileHash);
+
+        try {
+            Socket socket = new Socket(centralRegistry.getPeerIP(), centralRegistry.getPeerPort());
+            ObjectTransfer.sendObject(socket, req);
+            Object obj = ObjectTransfer.receiveObject(socket);
+            CentralRegistryResponse res = (CentralRegistryResponse) obj;
+
+            FileData file = new FileData();
+            file.setFileHash(fileHash);
+
+            if (res.sucess) {
+                for (Node peerNode : res.peers) {
+                    if (downloadFromPeer(peerNode, file, passkey)) {
+                        System.out.println("\nDownloaded from peer: " + peerNode);
+                        break;
+                    } else {
+                        System.out.println("Failed downloading from peer: " + peerNode);
+                    }
+                }
+            } else {
+                System.out.println("FAILED TO GET PEERS");
+            }
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean downloadFromPeer(Node peer, FileData file, String passkey) {
+        Node client = Handshake.getClient();
+        FileRequest req = new FileRequest(file, client);
+
+        try (Socket socket = new Socket(peer.getPeerIP(), peer.getPeerPort())) {
+            // Send request to peer
+            ObjectTransfer.sendObject(socket, req);
+            Object obj = ObjectTransfer.receiveObject(socket);
+            FileResponse res = (FileResponse) obj;
+
+            String fileName = res.file.getFileName();
+            TransferRequest treq = new TransferRequest(client, file, 7777);
+            ObjectTransfer.sendObject(socket, treq);
+
+            String filePath = "./downloads/" + fileName;
+
+            // Receive file using passkey
+            ConnectionHandlerSequential.receiveFile(treq.Port, filePath, passkey);
+
+            // Register file locally
+            Handshake.registerFile(file, filePath, passkey);
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
