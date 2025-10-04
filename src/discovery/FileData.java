@@ -8,13 +8,17 @@ import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class FileData implements Serializable{
+public class FileData implements Serializable {
 
     // Fields representing file metadata
     private String fileName;
     private long fileSize; // Size in bytes
     private String fileType; // MIME type or file extension
     private String fileHash; // Checksum or hash for integrity verification
+
+    // New fields for passkey-protected encryption
+    private String encFileKeyBase64; // Encrypted AES file key, Base64 encoded
+    private String saltBase64;        // Salt for PBKDF2 key derivation, Base64 encoded
 
     // Constructors
     public FileData() {
@@ -44,45 +48,30 @@ public class FileData implements Serializable{
         this.fileHash = calculateFileHash(file);
     }
 
-    // Getters and Setters
-    public String getFileName() {
-        return fileName;
-    }
+    // Getters and Setters for existing fields
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
+    public long getFileSize() { return fileSize; }
+    public void setFileSize(long fileSize) { this.fileSize = fileSize; }
 
-    public long getFileSize() {
-        return fileSize;
-    }
+    public String getFileType() { return fileType; }
+    public void setFileType(String fileType) { this.fileType = fileType; }
 
-    public void setFileSize(long fileSize) {
-        this.fileSize = fileSize;
-    }
+    public String getFileHash() { return fileHash; }
+    public void setFileHash(String fileHash) { this.fileHash = fileHash; }
 
-    public String getFileType() {
-        return fileType;
-    }
+    // Getters and Setters for new fields
+    public String getEncFileKeyBase64() { return encFileKeyBase64; }
+    public void setEncFileKeyBase64(String encFileKeyBase64) { this.encFileKeyBase64 = encFileKeyBase64; }
 
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
-    }
-
-    public String getFileHash() {
-        return fileHash;
-    }
-
-    public void setFileHash(String fileHash) {
-        this.fileHash = fileHash;
-    }
+    public String getSaltBase64() { return saltBase64; }
+    public void setSaltBase64(String saltBase64) { this.saltBase64 = saltBase64; }
 
     // Helper method to extract the file extension
     private String getFileExtension(String fileName) {
         int lastDotIndex = fileName.lastIndexOf('.');
-        if (lastDotIndex == -1) {
-            return ""; // No extension
-        }
+        if (lastDotIndex == -1) return ""; // No extension
         return fileName.substring(lastDotIndex + 1);
     }
 
@@ -116,6 +105,8 @@ public class FileData implements Serializable{
                 ", fileSize=" + fileSize +
                 ", fileType='" + fileType + '\'' +
                 ", fileHash='" + fileHash + '\'' +
+                ", encFileKeyBase64='" + encFileKeyBase64 + '\'' +
+                ", saltBase64='" + saltBase64 + '\'' +
                 '}';
     }
 }
