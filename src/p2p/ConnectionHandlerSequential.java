@@ -10,6 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import utils.CryptoUtils;
 import utils.UserExperience;
+import utils.UserExperience.TransferStage;
 
 public class ConnectionHandlerSequential {
 
