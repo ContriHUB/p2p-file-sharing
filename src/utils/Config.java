@@ -24,6 +24,41 @@ public final class Config {
 
     private Config() {}
 
+     // Getters for broadcast properties
+    public static String getBroadcastGroup() 
+    { 
+        return PROPERTIES.getProperty("broadcast.group","255.255.255.255").trim();
+    }
+    public static int getBroadcastPort()
+     {
+        return Integer.parseInt(PROPERTIES.getProperty("broadcast.port","50010")); 
+    }
+    public static int getBroadcastChunkBytes() 
+    { 
+        return Integer.parseInt(PROPERTIES.getProperty("broadcast.chunk_bytes","4096"));
+    }
+    public static int getBroadcastMaxRounds() 
+    { 
+        return Integer.parseInt(PROPERTIES.getProperty("broadcast.max_rounds","3")); 
+    }
+    public static int getBroadcastNackPort() 
+    {
+        return Integer.parseInt(PROPERTIES.getProperty("broadcast.nack_port","50011")); 
+    }
+    public static int getBroadcastNackDelayMs() 
+    {
+        return Integer.parseInt(PROPERTIES.getProperty("broadcast.nack_delay_ms","200")); 
+    }
+    public static int getBroadcastWaitNacksMs() 
+    { 
+        return Integer.parseInt(PROPERTIES.getProperty("broadcast.wait_nacks_ms","250")); 
+    }
+    public static int getBeaconPort() 
+    {
+        return Integer.parseInt(PROPERTIES.getProperty("beacon.port", "12344"));
+    }
+
+    // Getters for directory paths
     public static String getTestDir() {
         String dir = PROPERTIES.getProperty("test.dir", DEFAULT_TEST_DIR);
         ensureDirectory(dir);
