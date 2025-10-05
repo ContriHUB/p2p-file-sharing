@@ -113,7 +113,7 @@ public class Main {
 
                 
                 Scanner scanner = new Scanner(System.in);
-                System.out.print("Enter command (upload <FilePath> or download <FileHash>): ");
+                System.out.print("Enter command (upload <FilePath> | download <FileHash> | broadcastfile <FilePath> | broadcastrecieve <FileHash>): ");
                 
                 while (true) {
                     
@@ -149,14 +149,11 @@ public class Main {
                             
                             break;
                         case "broadcastfile":
-                        	FileData f = new FileData(argument);
-                			
-                			System.out.println("The File Hash of the File to be broadcasted is " + f.getFileHash());
-                			System.out.println("Type broadcast to enter broadcasting period");
-                			
-                			userInput = scanner.nextLine().trim();
-                        	BroadCastTransfer.BroadcastFile(f , Handshake.getClient() , argument);
-                        	break;
+                    	
+                			FileData f = new FileData(argument);
+    						System.out.println("The File Hash of the File to be broadcasted is " + f.getFileHash());
+    						BroadCastTransfer.BroadcastFile(f , Handshake.getClient() , argument);
+    						break;
                         
                         case "broadcastrecieve":
                         	BroadCastTransfer.RecieveFile(argument);

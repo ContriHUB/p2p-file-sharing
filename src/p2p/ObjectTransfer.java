@@ -6,8 +6,16 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import utils.Config;
+
 public class ObjectTransfer {
-	public static int broadCastListeningPort = 12345;
+
+	public static int broadCastListeningPort = Config.getBeaconPort();
+    private static final String BROADCAST_GROUP = Config.getBroadcastGroup();
+
+    private static final int MAX_UDP_PAYLOAD = 65507;
+    private static final int RECV_BUFFER = 65535;
+    
     public static void sendObject(Socket socket, Object object) throws IOException {
         // Create an ObjectOutputStream to send the object
         ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -26,7 +34,7 @@ public class ObjectTransfer {
     }
     
     public static void sendObjectBroadcast(Object obj) {
-    	try {
+            try {
             // Serialize the object
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
@@ -36,27 +44,31 @@ public class ObjectTransfer {
             objectOutputStream.close();
             byteArrayOutputStream.close();
 
+            // 
+            if (serializedObject.length > MAX_UDP_PAYLOAD) {
+                System.err.println("[ObjectTransfer] Serialized object too large for a single UDP packet (" +
+                                   serializedObject.length + " > " + MAX_UDP_PAYLOAD + ").");
+                return;
+            }
+
             // Create a UDP socket
-            DatagramSocket socket = new DatagramSocket();
+            try(DatagramSocket socket = new DatagramSocket()){
             socket.setBroadcast(true); // Enable broadcasting
 
             // Define the broadcast address and port
-            InetAddress broadcastAddress = InetAddress.getByName("255.255.255.255");
-            
+            InetAddress broadcastAddress = InetAddress.getByName(BROADCAST_GROUP.trim());
 
             // Create a DatagramPacket with the serialized object
             DatagramPacket packet = new DatagramPacket(serializedObject, serializedObject.length, broadcastAddress, ObjectTransfer.broadCastListeningPort);
 
             // Send the packet
             socket.send(packet);
+            }
             System.out.println("Object broadcasted successfully!");
-
-            // Close the socket
-            socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        }catch (Exception e){
+                e.printStackTrace();
+            }
         }
-    }
     
     public static Object recieveObjectBroadcast() {
     	try {
@@ -64,7 +76,7 @@ public class ObjectTransfer {
             DatagramSocket socket = new DatagramSocket(ObjectTransfer.broadCastListeningPort); // Listen on the same port
 
             // Buffer to store incoming data
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[RECV_BUFFER];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
             // Receive the packet
@@ -73,7 +85,7 @@ public class ObjectTransfer {
             System.out.println("Object received!");
 
             // Deserialize the object
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(packet.getData());
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(packet.getData(), 0, packet.getLength());
             ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
             Object receivedObject = objectInputStream.readObject();
             objectInputStream.close();
